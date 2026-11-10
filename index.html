@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hitster-träning</title>
+  <meta name="description" content="Träna på att placera låtar i tidsordning, med din egen Spotify-spellista.">
+  <meta name="theme-color" content="#14121f">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Hitster-träning">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">Hitster-träning</h1>
+    <nav class="topnav">
+      <button class="link" data-nav="stats" type="button">Statistik</button>
+      <button class="link" data-nav="settings" type="button">Inställningar</button>
+    </nav>
+  </header>
+
+  <main id="app">
+    <!-- Inställning av Client ID -->
+    <section id="screen-setup" class="screen" hidden>
+      <h2>Kom igång</h2>
+      <p>Appen behöver ett <strong>Client ID</strong> från en egen Spotify-app. Skapa den på
+        <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a>.</p>
+      <p>Ange den här adressen som <strong>Redirect URI</strong> i Spotify-appen:</p>
+      <div class="copyrow">
+        <code id="redirect-uri"></code>
+        <button type="button" class="small" id="copy-redirect">Kopiera</button>
+      </div>
+      <label class="field">
+        <span>Client ID</span>
+        <input id="client-id" autocomplete="off" spellcheck="false" placeholder="t.ex. 1a2b3c…">
+      </label>
+      <button type="button" class="primary" id="save-client">Spara och logga in</button>
+    </section>
+
+    <!-- Inloggning -->
+    <section id="screen-login" class="screen" hidden>
+      <h2>Logga in</h2>
+      <p>Logga in med ditt Spotify-konto. Uppspelning kräver Spotify Premium.</p>
+      <button type="button" class="primary" id="login">Logga in med Spotify</button>
+    </section>
+
+    <!-- Välj spellista -->
+    <section id="screen-playlist" class="screen" hidden>
+      <div id="resume-box" class="notice" hidden>
+        <p>Du har ett pågående spel.</p>
+        <div class="row">
+          <button type="button" class="primary" id="resume-game">Fortsätt</button>
+          <button type="button" id="discard-game">Släng</button>
+        </div>
+      </div>
+      <h2>Välj spellista</h2>
+      <p class="muted">Spotify visar bara låtarna i listor du äger eller samarbetar på.</p>
+      <label class="field">
+        <span>Klistra in länk till spellista</span>
+        <input id="playlist-url" inputmode="url" autocomplete="off" spellcheck="false"
+               placeholder="https://open.spotify.com/playlist/…">
+      </label>
+      <button type="button" class="primary" id="use-url">Använd länken</button>
+      <h3>Dina spellistor</h3>
+      <ul id="playlists" class="plist"><li class="muted">Laddar…</li></ul>
+    </section>
+
+    <!-- Spel -->
+    <section id="screen-game" class="screen" hidden>
+      <div class="scorebar">
+        <span><strong id="tl-count">0</strong>/10 kort</span>
+        <span>Rätt <strong id="sc-correct">0</strong></span>
+        <span>Fel <strong id="sc-wrong">0</strong></span>
+        <span>I rad <strong id="sc-streak">0</strong></span>
+      </div>
+
+      <div id="current" class="current">
+        <div class="mystery">
+          <div class="disc" aria-hidden="true"></div>
+          <div>
+            <div class="mystery-title" id="current-title">Ny låt</div>
+            <div class="muted" id="current-sub">Lyssna och placera den i tidslinjen.</div>
+          </div>
+        </div>
+        <div class="row" id="player-controls">
+          <button type="button" id="btn-play">▶ Spela</button>
+          <button type="button" id="btn-pause">❚❚ Paus</button>
+        </div>
+      </div>
+
+      <div id="reveal" class="reveal" hidden>
+        <div id="reveal-verdict" class="verdict"></div>
+        <div class="reveal-card">
+          <div class="year" id="reveal-year"></div>
+          <div>
+            <div class="title" id="reveal-title"></div>
+            <div class="muted" id="reveal-artist"></div>
+            <div class="source" id="reveal-source"></div>
+          </div>
+        </div>
+        <button type="button" class="primary" id="btn-next">Nästa låt</button>
+      </div>
+
+      <p class="hint" id="place-hint">Tryck på platsen där låten hör hemma.</p>
+      <ol id="timeline" class="timeline"></ol>
+
+      <div class="row end">
+        <button type="button" class="link danger" id="btn-quit">Avbryt spelet</button>
+      </div>
+    </section>
+
+    <!-- Resultat -->
+    <section id="screen-result" class="screen" hidden>
+      <h2 id="result-heading">Vunnet!</h2>
+      <div class="tiles" id="result-tiles"></div>
+      <h3>Över tid</h3>
+      <div id="result-history"></div>
+      <div class="row">
+        <button type="button" class="primary" id="btn-again">Spela igen</button>
+        <button type="button" id="btn-other">Byt spellista</button>
+      </div>
+    </section>
+
+    <!-- Statistik -->
+    <section id="screen-stats" class="screen" hidden>
+      <h2>Statistik</h2>
+      <div id="stats-body"></div>
+      <div class="row">
+        <button type="button" id="stats-back">Tillbaka</button>
+      </div>
+    </section>
+
+    <!-- Inställningar -->
+    <section id="screen-settings" class="screen" hidden>
+      <h2>Inställningar</h2>
+      <p>Redirect URI att ange i Spotify-appen:</p>
+      <div class="copyrow"><code id="redirect-uri-2"></code></div>
+      <label class="field">
+        <span>Client ID</span>
+        <input id="client-id-2" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="row">
+        <button type="button" id="save-client-2">Spara Client ID</button>
+        <button type="button" id="logout">Logga ut</button>
+      </div>
+      <h3>Data</h3>
+      <div class="row">
+        <button type="button" class="danger" id="reset-stats">Nollställ statistik</button>
+        <button type="button" id="clear-year-cache">Töm årscache</button>
+      </div>
+      <div class="row">
+        <button type="button" id="settings-back">Tillbaka</button>
+      </div>
+    </section>
+
+    <div id="loading" class="loading" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <span id="loading-text">Laddar…</span>
+    </div>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
